@@ -11,12 +11,25 @@ from config import Config
 
 # 关键词分类规则
 KEYWORD_RULES = [
-    # politics
-    (r"(?i)(trump|biden|election|president|congress|senate|vote|governor|mayor|democrat|republican|party|political|nato|war|iran|israel|ukraine|russia|china|tariff|sanction|ceasefire|peace|military|strike|invasion|strait|hormuz|gaza|taiwan|korea)", "politics"),
-    # finance
-    (r"(?i)(fed\b|interest rate|inflation|gdp|recession|stock|s&p|nasdaq|dow|treasury|bond|oil|gold|commodity|cpi|unemployment|jobs|payroll|rate cut|rate hike|bps)", "finance"),
-    # crypto
-    (r"(?i)(bitcoin|btc|ethereum|eth|crypto|solana|sol|defi|nft|token|blockchain|coinbase|binance|stablecoin|usdc|usdt)", "crypto"),
+    # politics - 政治、选举、地缘冲突
+    (r"(?i)(trump|biden|harris|obama|desantis|pence|vance|rfk|kennedy|newsom|haley|vivek|ramaswamy)", "politics"),
+    (r"(?i)(election|president|congress|senate|house\s+of\s+rep|governor|mayor|democrat|republican|gop|primary|midterm|ballot|vote|impeach|pardon)", "politics"),
+    (r"(?i)(nato|war\b|ceasefire|peace\s+deal|military|invasion|troops|strike\b|bomb|missile|drone|sanction|embargo|tariff|trade\s+war)", "politics"),
+    (r"(?i)(iran|israel|palestine|gaza|hamas|hezbollah|ukraine|russia|putin|zelensky|china|taiwan|xi\s+jinping|north\s+korea|kim\s+jong)", "politics"),
+    (r"(?i)(strait\s+of\s+hormuz|south\s+china\s+sea|regime\s+(change|fall)|coup|civil\s+war|insurgent|rebel)", "politics"),
+    (r"(?i)(eu\b|european\s+union|brexit|un\b|united\s+nations|g7|g20|summit|diplomat|ambassador|treaty|accord)", "politics"),
+    # finance - 金融、宏观经济
+    (r"(?i)(fed\b|federal\s+reserve|interest\s+rate|rate\s+(cut|hike|hold)|bps\b|basis\s+point|fomc|powell|yellen)", "finance"),
+    (r"(?i)(inflation|cpi\b|ppi\b|gdp\b|recession|depression|unemployment|jobs?\s+report|nonfarm|payroll)", "finance"),
+    (r"(?i)(stock|s&p\s*500|nasdaq|dow\s+jones|nyse|russell|market\s+crash|bear\s+market|bull\s+market|ipo\b)", "finance"),
+    (r"(?i)(treasury|bond\s+yield|yield\s+curve|credit\s+rating|default|debt\s+ceiling|fiscal|monetary)", "finance"),
+    (r"(?i)(oil\b|crude|brent|wti|gold\b|silver\b|copper|commodity|opec)", "finance"),
+    (r"(?i)(ecb\b|boj\b|boe\b|central\s+bank|quantitative|tightening|easing)", "finance"),
+    # crypto - 加密货币
+    (r"(?i)(bitcoin|btc\b|ethereum|eth\b|crypto|solana|sol\b|cardano|ada\b|polkadot|dot\b|avalanche|avax)", "crypto"),
+    (r"(?i)(defi|nft\b|token|blockchain|coinbase|binance|kraken|stablecoin|usdc|usdt|tether)", "crypto"),
+    (r"(?i)(halving|mining|hash\s*rate|layer\s*2|rollup|airdrop|staking|validator|memecoin|doge|shib)", "crypto"),
+    (r"(?i)(sec\s+(crypto|bitcoin|ethereum)|spot\s+etf|bitcoin\s+etf|eth\s+etf|crypto\s+regulation)", "crypto"),
 ]
 
 
