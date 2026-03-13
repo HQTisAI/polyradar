@@ -52,3 +52,24 @@ class Config:
 
     # 默认分类
     DEFAULT_CATEGORY = "trending"
+
+    # LLM 翻译（智谱 GLM）
+    LLM_BASE_URL = "https://open.bigmodel.cn/api/paas/v4"
+    LLM_MODEL = "glm-4-flash"
+    LLM_API_KEY = os.environ.get("ZHIPU_API_KEY", "")
+
+    @classmethod
+    def load_llm_key(cls):
+        """从 openclaw 配置加载 API Key（如果环境变量未设置）"""
+        if cls.LLM_API_KEY:
+            return
+        try:
+            import json
+            cfg_path = os.path.expanduser("~/.openclaw/openclaw.json")
+            with open(cfg_path) as f:
+                cfg = json.load(f)
+            key = cfg.get("models", {}).get("providers", {}).get("zhipu", {}).get("apiKey", "")
+            if key:
+                cls.LLM_API_KEY = key
+        except Exception:
+            pass

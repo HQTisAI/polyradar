@@ -4,6 +4,22 @@ from datetime import datetime, timezone, timedelta
 
 CST = timezone(timedelta(hours=8))
 
+# 延迟导入翻译器，避免循环依赖
+_translator = None
+
+def _get_translator():
+    global _translator
+    if _translator is None:
+        try:
+            from src.notifier.translator import translate_batch, translate_question
+            from config import Config
+            Config.load_llm_key()
+            _translator = {"batch": translate_batch, "single": translate_question}
+        except Exception as e:
+            print(f"⚠️ 翻译模块加载失败: {e}")
+            _translator = {"batch": lambda qs: {q: q for q in qs}, "single": lambda q: q}
+    return _translator
+
 
 def format_pct(value):
     """格式化百分比"""
@@ -35,13 +51,16 @@ def format_digest(top_movers, category_summary, total_markets):
     now = datetime.now(CST)
     time_str = now.strftime("%Y-%m-%d %H:%M")
 
+    # 批量翻译所有标题
+    translator = _get_translator()
+    questions = [m["question"] for m in top_movers]
+    translated = translator["batch"](questions)
+
     lines = [
-        f"📊 【PolyRadar 一小时风向回顾】",
-        f"⏰ {time_str} CST",
+        f"📊 PolyRadar 一小时风向回顾",
+        f"⏰ {time_str}",
         "",
-        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━",
-        "",
-        "🔥 Top 异动",
+        "🔥 热门异动",
         "",
     ]
 
@@ -55,9 +74,10 @@ def format_digest(top_movers, category_summary, total_markets):
     for i, m in enumerate(top_movers, 1):
         cat = m.get("category", "trending")
         emoji = cat_emoji.get(cat, "📌")
-        question = m["question"]
-        if len(question) > 50:
-            question = question[:47] + "..."
+        original = m["question"]
+        question = translated.get(original, original)
+        if len(question) > 60:
+            question = question[:57] + "..."
 
         yes_pct = f"{m['yes_price'] * 100:.0f}%"
         change = format_pct(m.get("one_hour_change"))
@@ -66,23 +86,20 @@ def format_digest(top_movers, category_summary, total_markets):
         url = polymarket_url(m.get("slug"))
 
         lines.append(f"{i}. {emoji} {question}")
-        lines.append(f"   Yes: {yes_pct} ({change}) | 24h量: {vol} | 池: {liq}")
+        lines.append(f"   概率: {yes_pct}（{change}）| 24h交易量: {vol} | 流动性: {liq}")
         lines.append(f"   🔗 {url}")
         lines.append("")
 
-    lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    lines.append("")
     lines.append("📈 市场概览")
 
     cat_names = {"politics": "时事政治", "finance": "金融市场", "crypto": "加密货币", "trending": "热度飙升"}
     for cat, data in category_summary.items():
         name = cat_names.get(cat, cat)
-        lines.append(f"  {cat_emoji.get(cat, '📌')} {name}: {data['count']}个市场 | 24h量: {format_usd(data['total_volume_24h'])}")
+        lines.append(f"  {cat_emoji.get(cat, '📌')} {name}: {data['count']}个市场 | 24h交易量: {format_usd(data['total_volume_24h'])}")
 
     lines.append(f"  📊 活跃市场总数: {total_markets}")
     lines.append("")
-    lines.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    lines.append("[自动推送 | PolyRadar]")
+    lines.append("— PolyRadar 自动推送")
 
     return "\n".join(lines)
 
@@ -92,9 +109,11 @@ def format_alert(alert):
     now = datetime.now(CST)
     time_str = now.strftime("%H:%M")
 
-    question = alert["question"]
-    if len(question) > 60:
-        question = question[:57] + "..."
+    translator = _get_translator()
+    original = alert["question"]
+    question = translator["single"](original)
+    if len(question) > 70:
+        question = question[:67] + "..."
 
     url = polymarket_url(alert.get("slug"))
 
@@ -106,17 +125,15 @@ def format_alert(alert):
         liq = format_usd(alert.get("liquidity"))
 
         lines = [
-            "🚨 【PolyRadar 紧急爆点预警】🚨",
+            "🚨 PolyRadar 爆点预警",
             "",
-            f"📍 标的: {question}",
-            f"⚡ 异动类型: 概率{direction}",
-            f"📊 当前状态:",
-            f"   Yes概率: {prev_pct} → {curr_pct} ({change_pct})",
-            f"   流动性池: {liq}",
+            f"📍 {question}",
+            f"⚡ 概率{direction}",
+            f"📊 {prev_pct} → {curr_pct}（{change_pct}）",
+            f"💧 流动性: {liq}",
             "",
-            f"🔗 快速查看: {url}",
-            "",
-            f"[{time_str} | PolyRadar]",
+            f"🔗 {url}",
+            f"— {time_str} PolyRadar",
         ]
 
     elif alert["alert_type"] == "volume_surge":
@@ -124,29 +141,26 @@ def format_alert(alert):
         curr_vol = format_usd(alert.get("curr_volume_24h"))
 
         lines = [
-            "🚨 【PolyRadar 紧急爆点预警】🚨",
+            "🚨 PolyRadar 爆点预警",
             "",
-            f"📍 标的: {question}",
-            f"⚡ 异动类型: 巨量资金入场",
-            f"📊 当前状态:",
-            f"   短时新增交易量: {vol_diff}",
-            f"   24h总交易量: {curr_vol}",
+            f"📍 {question}",
+            f"⚡ 巨量资金入场",
+            f"📊 短时新增交易量: {vol_diff}",
+            f"💰 24h总交易量: {curr_vol}",
             "",
-            f"🔗 快速查看: {url}",
-            "",
-            f"[{time_str} | PolyRadar]",
+            f"🔗 {url}",
+            f"— {time_str} PolyRadar",
         ]
 
     else:
         lines = [
-            "🚨 【PolyRadar 爆点预警】🚨",
+            "🚨 PolyRadar 爆点预警",
             "",
-            f"📍 标的: {question}",
-            f"⚡ 异动类型: {alert['alert_type']}",
+            f"📍 {question}",
+            f"⚡ {alert['alert_type']}",
             "",
-            f"🔗 快速查看: {url}",
-            "",
-            f"[{time_str} | PolyRadar]",
+            f"🔗 {url}",
+            f"— {time_str} PolyRadar",
         ]
 
     return "\n".join(lines)
@@ -158,12 +172,10 @@ def format_digest_with_ai(top_movers, category_summary, total_markets, ai_insigh
 
     if ai_insights:
         lines = base.split("\n")
-        # 在 "[自动推送]" 之前插入AI洞察
         insert_idx = len(lines) - 1
         ai_section = [
             "",
             "💡 AI 洞察",
-            "",
             ai_insights,
             "",
         ]
