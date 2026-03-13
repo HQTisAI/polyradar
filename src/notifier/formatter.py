@@ -139,14 +139,17 @@ def format_alert(alert):
     elif alert["alert_type"] == "volume_surge":
         vol_diff = format_usd(alert.get("volume_diff"))
         curr_vol = format_usd(alert.get("curr_volume_24h"))
+        bet_side = alert.get("bet_side", "未知")
+        yes_pct = f"{alert.get('yes_price', 0) * 100:.0f}%"
+        prev_yes_pct = f"{alert.get('prev_yes_price', 0) * 100:.0f}%"
 
         lines = [
             "🚨 PolyRadar 爆点预警",
             "",
             f"📍 {question}",
-            f"⚡ 巨量资金入场",
-            f"📊 短时新增交易量: {vol_diff}",
-            f"💰 24h总交易量: {curr_vol}",
+            f"⚡ 巨量资金入场 → 押注 {bet_side}",
+            f"📊 Yes概率: {prev_yes_pct} → {yes_pct}",
+            f"💰 短时新增: {vol_diff} | 24h总量: {curr_vol}",
             "",
             f"🔗 {url}",
             f"— {time_str} PolyRadar",

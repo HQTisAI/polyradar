@@ -132,10 +132,21 @@ def detect_alerts(markets):
         volume_diff = m["volume_24h"] - prev["volume_24h"]
         if volume_diff >= Config.ALERT_VOLUME_THRESHOLD:
             if not check_is_duplicate(market_id, "volume_surge"):
+                # 通过价格变化推断资金方向
+                price_delta = m["yes_price"] - prev["yes_price"]
+                if price_delta > 0.005:
+                    bet_side = "Yes"
+                elif price_delta < -0.005:
+                    bet_side = "No"
+                else:
+                    bet_side = "均衡"
                 detail = json.dumps({
                     "volume_diff": volume_diff,
                     "curr_volume_24h": m["volume_24h"],
                     "prev_volume_24h": prev["volume_24h"],
+                    "bet_side": bet_side,
+                    "yes_price": m["yes_price"],
+                    "prev_yes_price": prev["yes_price"],
                 }, ensure_ascii=False)
                 alerts.append({
                     "market_id": market_id,
@@ -145,6 +156,9 @@ def detect_alerts(markets):
                     "detail": detail,
                     "volume_diff": volume_diff,
                     "curr_volume_24h": m["volume_24h"],
+                    "bet_side": bet_side,
+                    "yes_price": m["yes_price"],
+                    "prev_yes_price": prev["yes_price"],
                 })
 
     return alerts
